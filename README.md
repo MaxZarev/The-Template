@@ -89,8 +89,11 @@ cp profile_numbers.txt.example profile_numbers.txt # переименуйте ф
 Откройте `config/settings.py` и измените:
 
 ```python
-is_browser_run = True  # Включить запуск браузера
+accounts_source = 'txt'  # Изменить с 'excel' на 'txt' для работы с текстовыми файлами
+is_browser_run = True    # Включить запуск браузера
 ```
+
+**Важно:** По умолчанию скрипт ищет профили в Excel файле (`accounts_source = 'excel'`). Если вы используете текстовые файлы, обязательно измените этот параметр на `'txt'`.
 
 ### Шаг 5: Первый запуск
 
@@ -352,10 +355,10 @@ mv addresses.txt.example addresses.txt # переименуйте файл с п
 0xghi789...
 ```
 
-В `config/settings.py` установите:
+**Важно!** В `config/settings.py` обязательно установите:
 
 ```python
-accounts_source = 'txt'  # вместо 'excel'
+accounts_source = 'txt'  # ОБЯЗАТЕЛЬНО измените с 'excel' на 'txt'!
 ```
 
 ### Шаг 4: Настройка config/settings.py
