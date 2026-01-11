@@ -562,3 +562,57 @@ class Ads:
                     f'{self.profile_number} Ошибка при проверке элемента: {error}')
 
         return False
+
+    def get_profile_proxy_data_from_ads(self, *, all_data: bool = False) -> Optional[Union[str, Dict[str, str]]]:
+        """
+        Получает настройки прокси профиля.
+
+        Поведение:
+        - all_data=False (по умолчанию):
+            Возвращает только IP прокси (str).
+            Чувствительные данные не извлекаются и не передаются дальше.
+        - all_data=True:
+            Возвращает словарь со всеми настройками прокси.
+
+        :param all_data: Вернуть все данные прокси (включая логин и пароль).
+        :return:
+            - str (ip), если all_data=False
+            - dict с ключами: ip, port, login, password, type — если all_data=True
+            - None при ошибке, отсутствии профиля или прокси
+        """
+
+        url = self._local_api_url.replace('v1', 'v2') + 'browser-profile/list'
+        payload = {"profile_no": [self.profile_number]}
+
+        try:
+            response = requests.post(url, json=payload, timeout=10)
+            response.raise_for_status()
+            resp_json = response.json()
+        except Exception as e:
+            logger.error(f"Ошибка HTTP при получении прокси ({self.profile_number}): {e}")
+            return None
+
+        if resp_json.get('code') != 0:
+            logger.error(f"API Error ({self.profile_number}): {resp_json.get('msg')}")
+            return None
+
+        profiles = resp_json.get('data', {}).get('list') or []
+        if not profiles:
+            logger.warning(f"Профиль {self.profile_number} не найден.")
+            return None
+
+        proxy_config = profiles[0].get('user_proxy_config') or {}
+        if not proxy_config:
+            logger.info(f"У профиля {self.profile_number} нет настроек прокси.")
+            return None
+
+        if not all_data:
+            return proxy_config.get('proxy_host')
+
+        return {
+            'ip': proxy_config.get('proxy_host'),
+            'port': proxy_config.get('proxy_port'),
+            'login': proxy_config.get('proxy_user'),
+            'password': proxy_config.get('proxy_password'),
+            'type': proxy_config.get('proxy_type'),
+        }
