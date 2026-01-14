@@ -37,45 +37,50 @@ class Metamask(Wallet):
         """
         self.open_wallet()
         try:
+            # проверяем, что открывается странница создания нового кошелька
             self.ads.page.get_by_test_id(
-                'onboarding-terms-checkbox').wait_for(timeout=5000, state='visible')
+                'onboarding-create-wallet').wait_for(timeout=5000, state='visible')
         except:
             raise Exception(
                 f'Ошибка создания кошелька {self.ads.profile_number} вероятно в метамаске уже есть счет, обнулите расширение')
 
-        self.ads.page.get_by_test_id('onboarding-terms-checkbox').click()
         self.ads.page.get_by_test_id('onboarding-create-wallet').click()
-        self.ads.page.get_by_test_id('metametrics-no-thanks').click()
+        self.ads.page.get_by_test_id(
+            'onboarding-create-with-srp-button').click()
 
         if not self.password:
             self.password = generate_password()
-        self.ads.page.get_by_test_id('create-password-new').fill(self.password)
         self.ads.page.get_by_test_id(
-            'create-password-confirm').fill(self.password)
-        self.ads.page.get_by_test_id('create-password-terms').click()
-        self.ads.page.get_by_test_id('create-password-wallet').click()
+            'create-password-new-input').fill(self.password)
+        self.ads.page.get_by_test_id(
+            'create-password-confirm-input').fill(self.password)
+        self.ads.page.get_by_test_id(
+            'create-password-terms').click()
+        self.ads.page.get_by_test_id('create-password-submit').click()
 
-        self.ads.page.get_by_test_id('secure-wallet-recommended').click()
         self.ads.page.get_by_test_id('recovery-phrase-reveal').click()
 
         seed = []
         for i in range(12):
             test_id = f'recovery-phrase-chip-{i}'
-            word = self.ads.page.get_by_test_id(test_id).inner_text()
+            word = self.ads.page.get_by_test_id(
+                test_id).locator('p').nth(1).inner_text().strip()
             seed.append(word)
 
-        self.ads.page.get_by_test_id('recovery-phrase-next').click()
+        self.ads.page.get_by_test_id('recovery-phrase-continue').click()
         for i in range(12):
-            if self.ads.page.get_by_test_id(f'recovery-phrase-input-{i}').count():
+            if self.ads.page.get_by_test_id(f'recovery-phrase-chip-{i}').locator('p').count():
                 self.ads.page.get_by_test_id(
-                    f'recovery-phrase-input-{i}').fill(seed[i])
+                    f'recovery-phrase-chip-{i}').click(force=True)
+                self.ads.page.get_by_role('button', name=f'{seed[i]}').click()
+
         self.ads.page.get_by_test_id('recovery-phrase-confirm').click()
+        self.ads.page.get_by_test_id('confirm-srp-modal-button').click()
+        self.ads.page.get_by_test_id('metametrics-checkbox').click()
+        self.ads.page.get_by_test_id('metametrics-i-agree').click()
+        self.open_wallet()
+
         random_sleep(3, 5)
-        self.ads.page.get_by_test_id('onboarding-complete-done').click()
-        self.ads.page.get_by_test_id('pin-extension-next').click()
-        self.ads.page.get_by_test_id('pin-extension-done').click()
-        random_sleep(3, 3)
-        self.ads.click_if_exists(method='test_id', value='popover-close')
 
         address = self.get_address()
 
@@ -107,7 +112,6 @@ class Metamask(Wallet):
                 'unlock-password').fill(str(self.password))
             self.ads.page.get_by_test_id('unlock-submit').click()
             random_sleep(3, 5)
-            self.ads.click_if_exists(method='test_id', value='popover-close')
         except Exception as e:
             logger.warning(
                 f'{self.ads.profile_number} не смогли авторизоваться в metamask, вероятно уже авторизованы {e}')
@@ -126,35 +130,38 @@ class Metamask(Wallet):
         """
         self.open_wallet()
 
-        seed_list = self.seed.split(' ')
         if not self.password:
             self.password = generate_password()
         try:
             self.ads.page.get_by_test_id(
-                'onboarding-create-wallet').wait_for(timeout=5000, state='visible')
-            self.ads.page.get_by_test_id('onboarding-terms-checkbox').click()
+                'onboarding-import-wallet').wait_for(timeout=5000, state='visible')
             self.ads.page.get_by_test_id('onboarding-import-wallet').click()
-            self.ads.page.get_by_test_id('metametrics-no-thanks').click()
-            for i, word in enumerate(seed_list):
-                self.ads.page.get_by_test_id(
-                    f'import-srp__srp-word-{i}').fill(word)
+            self.ads.page.get_by_test_id(
+                'onboarding-import-with-srp-button').click()
+            self.ads.page.get_by_test_id(
+                'srp-input-import__srp-note').type(self.seed, delay=100)
+
             self.ads.page.get_by_test_id('import-srp-confirm').click()
             self.ads.page.get_by_test_id(
-                'create-password-new').fill(self.password)
+                'create-password-new-input').fill(self.password)
             self.ads.page.get_by_test_id(
-                'create-password-confirm').fill(self.password)
-            self.ads.page.get_by_test_id('create-password-terms').click()
-            self.ads.page.get_by_test_id('create-password-import').click()
-            random_sleep(3, 5)
+                'create-password-confirm-input').fill(self.password)
+            self.ads.page.get_by_test_id(
+                'create-password-terms').click()
+
+            self.ads.page.get_by_test_id('create-password-submit').click()
+            self.ads.page.get_by_test_id('metametrics-checkbox').click()
+            self.ads.page.get_by_test_id('metametrics-i-agree').click()
             self.ads.page.get_by_test_id('onboarding-complete-done').click()
-            self.ads.page.get_by_test_id('pin-extension-next').click()
-            self.ads.click_if_exists(
-                method='test_id', value='pin-extension-done')
+            random_sleep(3, 3)
         except:
             logger.warning(
                 f'{self.ads.profile_number} в метамаске уже имеется счет, делаем сброс и импортируем новый')
-            self.ads.page.get_by_text(re.compile(
-                'Забыли пароль|Forgot password')).click()
+            self.ads.page.get_by_test_id(
+                'unlock-forgot-password-button').click()
+            self.ads.page.get_by_test_id(
+                'reset-password-modal-button').click()
+            seed_list = self.seed.split(' ')
             for i, word in enumerate(seed_list):
                 self.ads.page.get_by_test_id(
                     f'import-srp__srp-word-{i}').fill(word)
@@ -164,9 +171,10 @@ class Metamask(Wallet):
                 'create-vault-confirm-password').fill(self.password)
             self.ads.page.get_by_test_id(
                 'create-new-vault-submit-button').click()
+            random_sleep(5, 7)
 
-        random_sleep(3, 3)
-        self.ads.click_if_exists(method='test_id', value='popover-close')
+        self.open_wallet()
+
         address = self.get_address()
         seed_str = ' '.join(seed_list)
         return address, seed_str, self.password
@@ -176,12 +184,17 @@ class Metamask(Wallet):
         Возвращает адрес кошелька
         :return: адрес кошелька
         """
-        self.ads.page.get_by_test_id('account-options-menu-button').click()
+        self.ads.page.get_by_test_id(
+            'account-options-menu-button').click(force=True)
         self.ads.page.get_by_test_id('account-list-menu-details').click()
-        address = self.ads.page.locator(
-            '.qr-code__address-segments').inner_text().replace('\n', '')
-        self.ads.page.locator('section').locator(
-            '//span[contains(@style, "close")]').click()
+        self.ads.page.get_by_test_id(
+            'account-details-row-value-networks').click()
+        self.ads.page.get_by_test_id(
+            'multichain-address-row-qr-button').first.click()
+
+        address = self.ads.page.get_by_test_id(
+            'account-address').inner_text().replace('\n', '')
+        self.open_wallet()
         return address
 
     def connect(self, locator: Locator, timeout: int = 30) -> None:
@@ -305,29 +318,12 @@ class Metamask(Wallet):
 
     def select_chain(self, chain: Chain) -> None:
         """
-        Выбирает сеть в metamask. Если сеть не найдена, добавляет новую из параметра chain
+        Метод устарел, в метамаске больше не нунжно выбирать сеть
         :param chain: объект сети Chain
         :return: None
         """
-        self.open_wallet()
-        self.ads.page.get_by_test_id(
-            'network-display').wait_for(timeout=5000, state='visible')
-        chain_button = self.ads.page.get_by_test_id('network-display')
-        if chain.metamask_name == chain_button.inner_text():
-            return
-
-        chain_button.click()
-        random_sleep(1, 3)
-        enabled_networks = self.ads.page.locator(
-            'div[data-rbd-droppable-id="characters"]')
-        if enabled_networks.get_by_text(chain.metamask_name, exact=True).count():
-            enabled_networks.get_by_text(
-                chain.metamask_name, exact=True).click()
-        else:
-            self.ads.page.locator('header').locator(
-                '//span[contains(@style, "close")]').click()
-            self.set_chain(chain)
-            self.select_chain(chain)
+        logger.warning(
+            'Метод устарел, в метамаске больше не нунжно выбирать сеть')
 
     def _set_chain_data(self, chain: Chain) -> None:
         """
