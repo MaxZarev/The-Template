@@ -563,7 +563,7 @@ class Ads:
 
         return False
 
-    def get_profile_proxy_data_from_ads(self, *, all_data: bool = False) -> Optional[Union[str, Dict[str, str]]]:
+    def get_profile_proxy_data_from_ads(self, *, all_data: bool = False) -> str | dict[str, str]:
         """
         Получает настройки прокси профиля.
 
