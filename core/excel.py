@@ -159,13 +159,22 @@ class Excel:
 
     def add_column(self, column_name: str) -> int:
         """
-        Добавляет столбец в конец таблицы.
+        Добавляет столбец в конец таблицы. Если столбец уже существует, возвращает его номер.
         :param column_name: имя столбца
         :return: номер столбца
         """
+        # Проверяем, существует ли уже такой столбец
+        for row in self._sheet.iter_rows(max_row=1):
+            for cell in row:
+                if cell.value == column_name:
+                    return cell.column
+
+        # Столбец не найден - создаем новый
         col_num = self._sheet.max_column + 1
         self._sheet.cell(row=1, column=col_num, value=column_name)
         self._table.save(self._file)
+        logger.info(
+            f'{self.account.profile_number} Создан новый столбец {column_name} (столбец {col_num}).')
         return col_num
 
     def find_column(self, column_name: str) -> int:
